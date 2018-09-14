@@ -1,0 +1,19 @@
+{
+  "name": "hexagongame",
+  "version": "1.0.0",
+  "description": "ganme",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zhuchaoyi/HexagonGame.git"
+  },
+  "author": "Zhu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Zhuchaoyi/HexagonGame/issues"
+  },
+  "homepage": "https://github.com/Zhuchaoyi/HexagonGame#readme"
+}
