@@ -1,4 +1,4 @@
-
+require('./index.css')
 let can = document.querySelector('#can')
 let ctx = can.getContext('2d')
 class Hexagon { //六边形类
@@ -204,8 +204,46 @@ class Interaction { //基础交互类
     putBg(x, y) {
         ctx.putImageData(this.bg, x, y)
     }
-    Scoring(lineArr) {
-
+    scoring(type, lineArr) {//type:1,2每次放下一个+20，每次消除一行每个格子+2
+        if (type === 1) {
+            this.score += 20
+        } else {
+            this.score += 2
+        }
+        document.querySelector('#score').innerHTML = this.score
+    }
+    isOver() {
+        let cells = this.stage.cells
+        let target = this.target
+        for (let point of cells) {
+            if (!point.done) {
+                continue
+            }
+            let destPoi = [point]
+            let targetPoi = target.points
+            point://循环-判断每一个点
+            for (let index = 0, len = targetPoi.length; index < len; index++) {
+                if (!targetPoi[index].dirctions) {
+                    continue
+                }
+                let dirs = targetPoi[index].dirctions
+                let dirPoint = destPoi[index]
+                // dirs://循环-判断方向
+                for (let ite of dirs) {
+                    let p = dirPoint.mark[ite]
+                    if (p === -1 || !p.done) {
+                        destPoi.splice(1)
+                        break point;
+                    } else {
+                        destPoi.push(p)
+                    }
+                }
+                if (destPoi.length === targetPoi.length) {
+                    return false
+                }
+            }
+        }
+        return true
     }
     removeLines(point, ids) { //消除
         let dirs = [0, 1, 2]
@@ -268,7 +306,7 @@ class Interaction { //基础交互类
         })
         return order
     }
-    findPoints(e, target, stage) {
+    findPoints(e, target) {
         let negOne = false,
             isPaint = false
         let order = this.locate(e.clientX, e.clientY, this.stage.cells) //目标点
@@ -317,7 +355,7 @@ class Interaction { //基础交互类
         }
     }
     canDrop(e, target, stage) {
-        let finds = this.findPoints(e, target, stage)
+        let finds = this.findPoints(e, target)
         if (finds.negOne || finds.isPaint) {
             return {
                 res: false
@@ -342,6 +380,7 @@ class Interaction { //基础交互类
             this.target = this.target.move(this.oriPoint.x, this.oriPoint.y).draw()
             return
         }
+        this.scoring(1)
         this.putBg(0, 0)
         this.mappingPoints = canDrop.mappingPoints
         let ids = {}//匹配的id和对应这个点能消除的行数
@@ -357,6 +396,7 @@ class Interaction { //基础交互类
         if (this.fullLines.length > 0) {
             this.fullLines.forEach(item => {
                 item.forEach(p => {
+                    this.scoring(2)
                     p.done = true
                     new Hexagon(ctx, p.x, p.y, this.stage.r).draw(false, false, '#fff')
                 })
@@ -364,11 +404,11 @@ class Interaction { //基础交互类
         }
 
         this.saveBg(0, 0, can.width, can.height)
-        // this.target.move(point.x, point.y).draw()
-
         this.target = new Irregular(can.width - 60, can.height / 2, this.stage.r, 4)
         this.target.init().draw()
-
+        if (this.isOver()) {
+            alert('游戏结束')
+        }
         this.oriPoint = {}
     }
     bindEvent(target, stage) {
@@ -587,7 +627,7 @@ class Irregular { //随机拼接多边形类
 }
 
 (() => {
-    let stage = new Stage(can.width - 100, can.height, 20)
+    let stage = new Stage(can.width - 100, can.height, 30)
     stage.init().draw()
 
     let bound = stage.getBoundRect()
