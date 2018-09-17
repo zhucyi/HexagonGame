@@ -4,7 +4,7 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin')
 
 const config = {
     mode: 'development',
-    entry: ['./src/index.js'],
+    entry: ['@babel/polyfill','./src/index.js'],
     output: {
         path: path.join(__dirname, 'dist'),
         filename: '[name].js'
@@ -17,6 +17,10 @@ const config = {
                     fallback: 'style-loader',
                     use: 'css-loader'
                 })
+            },
+            {
+                test:/\.js$/,
+                use:['babel-loader']
             }
         ]
     },

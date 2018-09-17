@@ -1,6 +1,8 @@
+require('./reset.css')
 require('./index.css')
-let can = document.querySelector('#can')
-let ctx = can.getContext('2d')
+
+let can, ctx
+
 class Hexagon { //六边形类
     constructor(ctx, x, y, r = 10) {
         this.points = []
@@ -186,6 +188,7 @@ class Stage { //舞台类
 
 class Interaction { //基础交互类
     constructor() {
+        this.isPhone = 'ontouchstart' in window
         this.target = null
         this.stage = null
         this.bg = null
@@ -309,7 +312,8 @@ class Interaction { //基础交互类
     findPoints(e, target) {
         let negOne = false,
             isPaint = false
-        let order = this.locate(e.clientX, e.clientY, this.stage.cells) //目标点
+        let mousePosi = this.mousePosi(e)
+        let order = this.locate(mousePosi.x, mousePosi.y, this.stage.cells) //目标点
         let point = this.stage.cells[order]
         let destPoi = [point]
         let targetPoi = target.points
@@ -411,63 +415,69 @@ class Interaction { //基础交互类
         }
         this.oriPoint = {}
     }
+    follow() {
+        this.clearAll()
+        this.putBg(0, 0)
+        this.target.draw()
+        let item = window.requestAnimationFrame(this.follow)
+        window.cancelAnimationFrame(item)
+    }
+    move(e) {
+        e.preventDefault()
+        let mousePosi = this.mousePosi(e)
+        this.moving = true
+        this.target.move(mousePosi.x, mousePosi.y)
+        this.follow()
+    }
+    mousePosi(e) {
+        let point = {
+            x: 0,
+            y: 0
+        }
+        if (this.isPhone && e.changedTouches.length > 0) {
+            point.x = e.changedTouches[0].clientX
+            point.y = e.changedTouches[0].clientY
+        } else {
+            point.x = e.clientX
+            point.y = e.clientY
+        }
+        return point
+    }
     bindEvent(target, stage) {
         this.target = target
         this.stage = stage
-        let follow = () => {
-            this.clearAll()
-            this.putBg(0, 0)
-            this.target.draw()
-            let item = window.requestAnimationFrame(follow)
-            window.cancelAnimationFrame(item)
+        let event = {
+            start: 'mousedown',
+            move: 'mousemove',
+            end: 'mouseup'
         }
-        let move = e => {
+        if (this.isPhone) {
+            event = {
+                start: 'touchstart',
+                move: 'touchmove',
+                end: 'touchend'
+            }
+        }
+        let move = this.move.bind(this)
+        can.addEventListener(event.start, e => {
+            let mousePoint = this.mousePosi(e)
+            if (ctx.isPointInPath(mousePoint.x, mousePoint.y)) {
+                this.oriPoint = {
+                    x: this.target.cp.x,
+                    y: this.target.cp.y
+                }
+                can.addEventListener(event.move, move)
+            }
             e.preventDefault()
-            this.moving = true
-            this.target.move(e.clientX, e.clientY)
-            follow()
-        }
-        if (document.ontouchstart) {
-            can.addEventListener('touchstart', e => {
-                alert()
-                e.preventDefault()
-                if (ctx.isPointInPath(e.clientX, e.clientY)) {
-                    this.oriPoint = {
-                        x: this.target.cp.x,
-                        y: this.target.cp.y
-                    }
-                    can.addEventListener('touchmove', move)
-                }
-            })
-            can.addEventListener('touchend', e => {
-                e.preventDefault()
-                can.removeEventListener('mousemove', move)
-                if (this.moving) {
-                    this.drop(e)
-                    this.moving = false
-                }
-            })
-
-        } else {
-            can.addEventListener('mousedown', e => {
-                e.preventDefault()
-                if (ctx.isPointInPath(e.clientX, e.clientY)) {
-                    this.oriPoint = {
-                        x: this.target.cp.x,
-                        y: this.target.cp.y
-                    }
-                    can.addEventListener('mousemove', move)
-                }
-            })
-            can.addEventListener('mouseup', e => {
-                e.preventDefault()
-                can.removeEventListener('mousemove', move)
-                if (this.moving) {
-                    this.drop(e)
-                    this.moving = false
-                }
-            })
-        }
+        })
+        can.addEventListener(event.end, e => {
+            can.removeEventListener('mousemove', move)
+            if (this.moving) {
+                this.drop(e)
+                this.moving = false
+            }
+            e.preventDefault()
+        })
     }
 }
 
@@ -555,12 +565,17 @@ class Irregular { //随机拼接多边形类
         return isPushed
     }
     _randomColor() {
+        let max = Math.floor(Math.random() * 250),
+            mid,
+            min,
+            saturation = Math.random() * 0.6
+        min = Math.floor((1 - saturation) * saturation)
+        mid = Math.floor(Math.random() * (max - min + 1) + min)
         return "#" + (~~(Math.random() * (1 << 24))).toString(16)
     }
     draw() {
         (!this.color) && (this.color = this._randomColor())
         this.points.forEach((item, index, arr) => {
-            // let color = this._randomColor()
             if (index === 0) {
                 new Hexagon(ctx, item.x, item.y, this.r).draw(false, false, this.color)
             } else if (index === arr.length - 1) {
@@ -626,7 +641,13 @@ class Irregular { //随机拼接多边形类
     }
 }
 
-(() => {
+document.addEventListener('DOMContentLoaded', e => {
+    can = document.querySelector('#can')
+    ctx = can.getContext('2d')
+    let width = screen.width
+        height = screen.height
+    can.width = width
+    can.height = height
     let stage = new Stage(can.width - 100, can.height, 30)
     stage.init().draw()
 
@@ -646,4 +667,4 @@ class Irregular { //随机拼接多边形类
     let ir = new Irregular(can.width - 50, can.height / 2, stage.r, 4)
     ir.init().draw()
     ia.bindEvent(ir, stage)
-})()
+});
