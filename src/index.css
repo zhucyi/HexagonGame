@@ -1,3 +1,5 @@
 body {
     background: #eee;
+    user-select: none;
+    width: 100px;
 }

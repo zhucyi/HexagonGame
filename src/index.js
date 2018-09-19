@@ -565,12 +565,6 @@ class Irregular { //随机拼接多边形类
         return isPushed
     }
     _randomColor() {
-        let max = Math.floor(Math.random() * 250),
-            mid,
-            min,
-            saturation = Math.random() * 0.6
-        min = Math.floor((1 - saturation) * saturation)
-        mid = Math.floor(Math.random() * (max - min + 1) + min)
         return "#" + (~~(Math.random() * (1 << 24))).toString(16)
     }
     draw() {
