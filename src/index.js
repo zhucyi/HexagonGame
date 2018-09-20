@@ -309,14 +309,14 @@ class Interaction { //基础交互类
         })
         return order
     }
-    findPoints(e, target) {
+    findPoints() {
         let negOne = false,
             isPaint = false
-        let mousePosi = this.mousePosi(e)
+        let mousePosi = this.target.cp
         let order = this.locate(mousePosi.x, mousePosi.y, this.stage.cells) //目标点
         let point = this.stage.cells[order]
         let destPoi = [point]
-        let targetPoi = target.points
+        let targetPoi = this.target.points
         if (!point.done) {
             isPaint = true;
             return {
@@ -358,27 +358,27 @@ class Interaction { //基础交互类
             destPoi
         }
     }
-    canDrop(e, target, stage) {
-        let finds = this.findPoints(e, target)
+    canDrop() {
+        let finds = this.findPoints()
         if (finds.negOne || finds.isPaint) {
             return {
                 res: false
             }
         }
         let mappingPoints = finds.destPoi
-        let bound = target.getBoundRect()
-        let sbound = stage.getBoundRect()
-        let inBound = !(bound.min.x + stage.r < sbound.min.x ||
-            bound.min.y + stage.r < sbound.min.y ||
-            bound.max.x - stage.r > sbound.max.x ||
-            bound.max.y - stage.r > sbound.max.y)
+        let bound = this.target.getBoundRect()
+        let sbound = this.stage.getBoundRect()
+        let inBound = !(bound.min.x + this.stage.r < sbound.min.x ||
+            bound.min.y + this.stage.r < sbound.min.y ||
+            bound.max.x - this.stage.r > sbound.max.x ||
+            bound.max.y - this.stage.r > sbound.max.y)
         return {
             res: (mappingPoints.indexOf(-1) < 0) && inBound,
             mappingPoints: mappingPoints
         }
     }
-    drop(e) {
-        let canDrop = this.canDrop(e, this.target, this.stage)
+    drop() {
+        let canDrop = this.canDrop()
         if (!canDrop.res) {
             this.putBg(0, 0)
             this.target = this.target.move(this.oriPoint.x, this.oriPoint.y).draw()
@@ -415,12 +415,26 @@ class Interaction { //基础交互类
         }
         this.oriPoint = {}
     }
+    _drawShadow() {
+        let canDrop = this.canDrop()
+        if (!canDrop.res) {
+            return
+        }
+        this.mappingPoints = canDrop.mappingPoints
+        this.mappingPoints.forEach(item => {
+            item.done = false
+            new Hexagon(ctx, item.x, item.y, this.stage.r).draw(false, false, '#eee')
+        })
+        
+    }
+    _clearShadow() {}
     follow() {
         this.clearAll()
         this.putBg(0, 0)
         this.target.draw()
-        let item = window.requestAnimationFrame(this.follow)
-        window.cancelAnimationFrame(item)
+        this._drawShadow()
+        let animate = window.requestAnimationFrame(this.follow)
+        window.cancelAnimationFrame(animate)
     }
     move(e) {
         e.preventDefault()
@@ -429,6 +443,7 @@ class Interaction { //基础交互类
         this.target.move(mousePosi.x, mousePosi.y)
         this.follow()
     }
+    // 鼠标位置点转化
     mousePosi(e) {
         let point = {
             x: 0,
@@ -473,7 +488,7 @@ class Interaction { //基础交互类
         can.addEventListener(event.end, e => {
             can.removeEventListener('mousemove', move)
             if (this.moving) {
-                this.drop(e)
+                this.drop()
                 this.moving = false
             }
             e.preventDefault()
@@ -638,11 +653,11 @@ class Irregular { //随机拼接多边形类
 document.addEventListener('DOMContentLoaded', e => {
     can = document.querySelector('#can')
     ctx = can.getContext('2d')
-    let width = screen.width
-        height = screen.height
+    let width = 400
+    height = 400
     can.width = width
     can.height = height
-    let stage = new Stage(can.width - 100, can.height, 30)
+    let stage = new Stage(can.width - 100, can.height, 20)
     stage.init().draw()
 
     let bound = stage.getBoundRect()
