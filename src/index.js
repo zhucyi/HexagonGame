@@ -1,7 +1,9 @@
 require('./reset.css')
 require('./index.css')
-
 let can, ctx
+
+// const VConsole = require('vconsole')
+// new VConsole();
 
 class Hexagon { //六边形类
     constructor(ctx, x, y, r = 10) {
@@ -23,7 +25,7 @@ class Hexagon { //六边形类
             angle += Math.PI / 3
         }
     }
-    draw(begin, close, fill) { //判断是不是需要一笔画成
+    draw(begin, close, fill, border) { //判断是不是需要一笔画成
         this._getPoints()
         let points = this.points
         if (!begin) {
@@ -33,8 +35,8 @@ class Hexagon { //六边形类
         for (let i = 1, len = points.length; i < len; i++) {
             this.ctx.lineTo(points[i].x, points[i].y)
         }
-        this.ctx.strokeStyle = "blue"
-        this.ctx.fillStyle = fill ? fill : '#fff'
+        this.ctx.strokeStyle = border || "blue"
+        this.ctx.fillStyle = fill || '#fff'
         this.ctx.fill()
         if (!close) {
             this.ctx.closePath()
@@ -45,10 +47,12 @@ class Hexagon { //六边形类
 }
 
 class Stage { //舞台类
-    constructor(width, height, r = 10) {
+    constructor(width, height, r = 10, fill, border) {
         this.width = width
         this.height = height
         this.r = r
+        this.fill = fill || '#fff'
+        this.border = border || '#eee'
         this.mistake = 0.1 //精度误差范围
         this.cp = {}
         this.lastDp = {}
@@ -142,10 +146,10 @@ class Stage { //舞台类
     }
     draw() {
         this.cells.forEach(item => {
-            new Hexagon(ctx, item.x, item.y, this.r).draw()
-            ctx.fillStyle = 'red'
-            ctx.font = "10px";
-            ctx.fillText(`${item.x},${parseInt(item.y)}`, item.x - this.r / 2, item.y);
+            new Hexagon(ctx, item.x, item.y, this.r).draw(false, false, this.fill, this.border)
+            // ctx.fillStyle = 'red'
+            // ctx.font = "10px";
+            // ctx.fillText(`${item.x},${parseInt(item.y)}`, item.x - this.r / 2, item.y);
         })
         return this
     }
@@ -215,7 +219,7 @@ class Interaction { //基础交互类
         }
         document.querySelector('#score').innerHTML = this.score
     }
-    isOver() {
+    _isOver() {
         let cells = this.stage.cells
         let target = this.target
         for (let point of cells) {
@@ -248,16 +252,16 @@ class Interaction { //基础交互类
         }
         return true
     }
-    removeLines(point, ids) { //消除
+    _removeLines(point, ids) { //消除
         let dirs = [0, 1, 2]
         for (let item of dirs) {
-            let lineRes = this.getLine(point, item, ids)
+            let lineRes = this._getLine(point, item, ids)
             if (lineRes.res) {
                 this.fullLines.push(lineRes.arr)
             }
         }
     }
-    getLine(point, dirction, ids) {
+    _getLine(point, dirction, ids) {
         let p0 = point.mark[dirction]
         let p0Arr = [point]
         while (p0 != -1) {
@@ -297,7 +301,7 @@ class Interaction { //基础交互类
             arr: resArr
         }
     }
-    locate(x, y, arr) {
+    _locate(x, y, arr) {
         let min = Infinity,
             order = -1
         arr.forEach((item, index) => {
@@ -309,11 +313,11 @@ class Interaction { //基础交互类
         })
         return order
     }
-    findPoints() {
+    _findPoints() {
         let negOne = false,
             isPaint = false
         let mousePosi = this.target.cp
-        let order = this.locate(mousePosi.x, mousePosi.y, this.stage.cells) //目标点
+        let order = this._locate(mousePosi.x, mousePosi.y, this.stage.cells) //目标点
         let point = this.stage.cells[order]
         let destPoi = [point]
         let targetPoi = this.target.points
@@ -358,14 +362,15 @@ class Interaction { //基础交互类
             destPoi
         }
     }
-    canDrop() {
-        let finds = this.findPoints()
+    _canDrop() {
+        let finds = this._findPoints()
         if (finds.negOne || finds.isPaint) {
             return {
                 res: false
             }
         }
         let mappingPoints = finds.destPoi
+
         let bound = this.target.getBoundRect()
         let sbound = this.stage.getBoundRect()
         let inBound = !(bound.min.x + this.stage.r < sbound.min.x ||
@@ -377,8 +382,37 @@ class Interaction { //基础交互类
             mappingPoints: mappingPoints
         }
     }
+    _produceIrregular() {
+        this.target = new Irregular(this.stage.width / 2, this.stage.height + 50, this.stage.r, 4, this.stage.border)
+        this.target.init().draw()
+    }
+    _eliminate(canDrop) {//填满并且消除
+        this.mappingPoints = canDrop.mappingPoints
+        let ids = {}//匹配的id和对应这个点能消除的行数
+        this.mappingPoints.forEach(item => {
+            item.done = false
+            ids[item.id] = 0
+            new Hexagon(ctx, item.x, item.y, this.stage.r)
+                .draw(false, false, this.target.color, this.target.border)
+        })
+        this.fullLines.splice(0)
+        this.mappingPoints.forEach(item => {
+            this._removeLines(item, ids)
+        })
+        // 消除行
+        if (this.fullLines.length > 0) {
+            this.fullLines.forEach(item => {
+                item.forEach(p => {
+                    this.scoring(2)
+                    p.done = true
+                    new Hexagon(ctx, p.x, p.y, this.stage.r)
+                        .draw(false, false, this.stage.fill, this.stage.border)
+                })
+            })
+        }
+    }
     drop() {
-        let canDrop = this.canDrop()
+        let canDrop = this._canDrop()
         if (!canDrop.res) {
             this.putBg(0, 0)
             this.target = this.target.move(this.oriPoint.x, this.oriPoint.y).draw()
@@ -386,72 +420,51 @@ class Interaction { //基础交互类
         }
         this.scoring(1)
         this.putBg(0, 0)
-        this.mappingPoints = canDrop.mappingPoints
-        let ids = {}//匹配的id和对应这个点能消除的行数
-        this.mappingPoints.forEach(item => {
-            item.done = false
-            ids[item.id] = 0
-            new Hexagon(ctx, item.x, item.y, this.stage.r).draw(false, false, this.target.color)
-        })
-        this.fullLines.splice(0)
-        this.mappingPoints.forEach(item => {
-            this.removeLines(item, ids)
-        })
-        if (this.fullLines.length > 0) {
-            this.fullLines.forEach(item => {
-                item.forEach(p => {
-                    this.scoring(2)
-                    p.done = true
-                    new Hexagon(ctx, p.x, p.y, this.stage.r).draw(false, false, '#fff')
-                })
-            })
-        }
-
+        this._eliminate(canDrop)
         this.saveBg(0, 0, can.width, can.height)
-        this.target = new Irregular(can.width - 60, can.height / 2, this.stage.r, 4)
-        this.target.init().draw()
-        if (this.isOver()) {
-            alert('游戏结束')
+        this._produceIrregular()
+        if (this._isOver()) {
+            setTimeout(() => {
+                alert('游戏结束')
+            }, 100)
         }
         this.oriPoint = {}
     }
-    _drawShadow() {
-        let canDrop = this.canDrop()
+    _drawShadow() {//移动目标再棋盘上填满对应的阴影
+        let canDrop = this._canDrop()
         if (!canDrop.res) {
             return
         }
         this.mappingPoints = canDrop.mappingPoints
         this.mappingPoints.forEach(item => {
-            item.done = false
-            new Hexagon(ctx, item.x, item.y, this.stage.r).draw(false, false, '#eee')
+            new Hexagon(ctx, item.x, item.y, this.stage.r)
+                .draw(false, false, '#f5f5f5', this.target.color)
         })
-        
     }
-    _clearShadow() {}
     follow() {
         this.clearAll()
         this.putBg(0, 0)
-        this.target.draw()
         this._drawShadow()
+        this.target.draw()
         let animate = window.requestAnimationFrame(this.follow)
         window.cancelAnimationFrame(animate)
     }
     move(e) {
         e.preventDefault()
-        let mousePosi = this.mousePosi(e)
+        let mousePosi = this.mousePosi(e, -50)
         this.moving = true
         this.target.move(mousePosi.x, mousePosi.y)
         this.follow()
     }
     // 鼠标位置点转化
-    mousePosi(e) {
+    mousePosi(e, offset = 0) {
         let point = {
             x: 0,
             y: 0
         }
         if (this.isPhone && e.changedTouches.length > 0) {
             point.x = e.changedTouches[0].clientX
-            point.y = e.changedTouches[0].clientY
+            point.y = e.changedTouches[0].clientY + offset
         } else {
             point.x = e.clientX
             point.y = e.clientY
@@ -497,12 +510,13 @@ class Interaction { //基础交互类
 }
 
 class Irregular { //随机拼接多边形类
-    constructor(x, y, r = 10, maxLength = 3) {
+    constructor(x, y, r = 10, maxLength = 3, border) {
         this.cp = {
             x,
             y
         }
         this.r = r
+        this.border = border || '#fff'
         this.color = ''
         this.mistake = 0.1
         this.boundRect = {}
@@ -527,7 +541,6 @@ class Irregular { //随机拼接多边形类
             this.hexCount--
         }
         this.getBoundRect()
-        console.log(this, '\r\n', this.points)
         return this
     }
     _detectPoint() {
@@ -586,18 +599,21 @@ class Irregular { //随机拼接多边形类
         (!this.color) && (this.color = this._randomColor())
         this.points.forEach((item, index, arr) => {
             if (index === 0) {
-                new Hexagon(ctx, item.x, item.y, this.r).draw(false, false, this.color)
+                new Hexagon(ctx, item.x, item.y, this.r)
+                    .draw(false, false, this.color, this.border)
             } else if (index === arr.length - 1) {
-                new Hexagon(ctx, item.x, item.y, this.r).draw(true, false, this.color)
+                new Hexagon(ctx, item.x, item.y, this.r)
+                    .draw(true, false, this.color, this.border)
             } else {
-                new Hexagon(ctx, item.x, item.y, this.r).draw(true, false, this.color)
+                new Hexagon(ctx, item.x, item.y, this.r)
+                    .draw(true, false, this.color, this.border)
             }
         })
-        this.points.forEach(item => {
-            ctx.fillStyle = 'black'
-            ctx.font = "10px";
-            ctx.fillText(`${item.x},${parseInt(item.y)}`, item.x - this.r / 2, item.y);
-        })
+        // this.points.forEach(item => {
+        //     ctx.fillStyle = 'black'
+        //     ctx.font = '10px';
+        //     ctx.fillText(`${item.x},${parseInt(item.y)}`, item.x - this.r / 2, item.y);
+        // })
         return this
     }
     getBoundRect() {
@@ -653,27 +669,17 @@ class Irregular { //随机拼接多边形类
 document.addEventListener('DOMContentLoaded', e => {
     can = document.querySelector('#can')
     ctx = can.getContext('2d')
-    let width = 400
-    height = 400
+    let width = screen.availWidth
+    height = screen.availHeight
     can.width = width
     can.height = height
-    let stage = new Stage(can.width - 100, can.height, 20)
+    let stage = new Stage(can.width, can.height - 200, 20, '#fff', '#bbb')
     stage.init().draw()
-
-    let bound = stage.getBoundRect()
-    ctx.beginPath()
-    ctx.moveTo(bound.min.x, bound.min.y)
-    ctx.lineTo(bound.max.x, bound.min.y)
-    ctx.lineTo(bound.max.x, bound.max.y)
-    ctx.lineTo(bound.min.x, bound.max.y)
-    ctx.closePath()
-    ctx.stroke()
-    console.log(stage)
 
     let ia = new Interaction()
     ia.saveBg(0, 0, can.width, can.height)
 
-    let ir = new Irregular(can.width - 50, can.height / 2, stage.r, 4)
+    let ir = new Irregular(can.width / 2, can.height - 100, stage.r, 4, stage.border)
     ir.init().draw()
     ia.bindEvent(ir, stage)
 });

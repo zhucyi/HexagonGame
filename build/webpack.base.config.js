@@ -21,7 +21,7 @@ const config = {
                         options: {
                             plugins: () => [
                                 require('autoprefixer')(),
-                                require('postcss-px2rem')()
+                                require('postcss-px2rem')({ remUnit: 16 })
                             ]
                         }
                     }]
