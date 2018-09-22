@@ -6,10 +6,16 @@
 六边形每条边所在的垂线上填充满以后消除该行
 
 #### 代码结构：  
-代码结构：
-Hexagon 六边形类
-Stage 舞台类
-Interaction 基础交互类
-Irregular 随机拼接多边形类
-#### 版本1：   
+
+ - Hexagon 六边形类  
+最基础的类，用来绘画六边形
+ - Stage 舞台类
+棋盘，即被拖拽到的舞台，由n多个六边形拼接而成
+ - Irregular 随机拼接多边形类
+随机生成拼接的方块
+ - Interaction 基础交互类
+拖拽操作事件，各种消除提示判断
+
+
+#### 截图：  
 ![版本1](https://github.com/Zhuchaoyi/HexagonGame/raw/master/show/demo1.png)
