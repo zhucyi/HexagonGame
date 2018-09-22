@@ -9,11 +9,11 @@
 
  - Hexagon 六边形类  
 最基础的类，用来绘画六边形
- - Stage 舞台类
+ - Stage 舞台类  
 棋盘，即被拖拽到的舞台，由n多个六边形拼接而成
- - Irregular 随机拼接多边形类
+ - Irregular 随机拼接多边形类  
 随机生成拼接的方块
- - Interaction 基础交互类
+ - Interaction 基础交互类  
 拖拽操作事件，各种消除提示判断
 
 
