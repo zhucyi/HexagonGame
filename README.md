@@ -18,4 +18,4 @@
 
 
 #### 截图：  
-![版本1](https://github.com/Zhuchaoyi/HexagonGame/raw/master/show/demo1.png)
+![版本1](https://github.com/Zhuchaoyi/HexagonGame/raw/master/show/demo2.png)
