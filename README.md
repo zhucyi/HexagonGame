@@ -1,6 +1,6 @@
 # HexagonGame
 六边形消消乐
-
+游戏地址 [点我点我！！](https://zhucyi.github.io/play/)
 ## 运行
 ```
 npm ci
