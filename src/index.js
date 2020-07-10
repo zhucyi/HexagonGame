@@ -50,3 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
   ir.init().draw();
   ia.bindEvent(ir, stage);
 });
+
+document.querySelector('#info').addEventListener('click', () => {
+  alert("看着不爽，打开f12切换移动端显示模式食用更佳");
+  alert('六边形每条边连成一线即可消除');
+  alert('enjoy!');
+});

@@ -8,9 +8,25 @@ body {
   user-select: none;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 5%;
+  height: 30px;
+}
 #score {
   width: 100%;
-  height: 16px;
+  text-align: center;
+}
+
+.info {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  background: #eee;
+  border-radius: 50%;
   text-align: center;
 }
 
