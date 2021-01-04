@@ -1,4 +1,10 @@
 # HexagonGame
+
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
+<a href="https://zhucyi.github.io/play">
+<img src="https://img.shields.io/badge/demos-🚀-yellow.svg" alt="demos" />
+</a>
+
 六边形消消乐
 游戏地址 [点我点我！！](https://zhucyi.github.io/play/)
 ## 运行
